@@ -1,725 +1,1017 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-   <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <title>Interactive Peptide Compendium</title>
-   <script src="https://cdn.tailwindcss.com"></script>
-   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-   <link rel="preconnect" href="https://fonts.googleapis.com">
-   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-   <!-- Chosen Palette: Warm Neutrals & Professional Blue -->
-   <!-- Application Structure Plan: A two-panel SPA. Left panel for navigation, searching, and filtering of peptides by name, class, or indication. This allows for rapid discovery. The right panel displays the detailed information for the selected peptide in a structured, user-friendly format with tabs and data visualizations. This structure was chosen to transform the static reference 'book' into a dynamic 'tool', prioritizing fast information retrieval and comparison, which is how clinicians use reference materials. -->
-   <!-- Visualization & Content Choices: Peptides are listed as interactive buttons for direct access. A search bar provides text-based filtering. Dropdowns allow categorical filtering by 'Class' and 'Indication' (Goal: Organize/Filter). For each peptide, a 'Quick Reference' card uses icons for at-a-glance information (Goal: Inform). Pharmacokinetic data (Half-life, Time to Peak) is visualized using a Chart.js bar chart for intuitive comparison of drug action timelines (Goal: Compare). Dense textual information is organized into tabs (Mechanism, Dosing, Pearls, Safety) to reduce cognitive load and allow focused reading (Goal: Inform/Organize). This interactive structure, using HTML/CSS/JS and Chart.js, makes the dense clinical data far more accessible and useful than a static document. -->
-   <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
-   <style>
-       body {
-           font-family: 'Inter', sans-serif;
-           background-color: #FDFBF6;
-           color: #3C3C3C;
-       }
-       .main-content::-webkit-scrollbar { width: 6px; }
-       .main-content::-webkit-scrollbar-track { background: #f1f1f1; }
-       .main-content::-webkit-scrollbar-thumb { background: #A0C4FF; border-radius: 6px;}
-       .main-content::-webkit-scrollbar-thumb:hover { background: #8AABDB; }
-       .sidebar::-webkit-scrollbar { width: 6px; }
-       .sidebar::-webkit-scrollbar-track { background: #f1f1f1; }
-       .sidebar::-webkit-scrollbar-thumb { background: #A0C4FF; border-radius: 6px;}
-       .sidebar::-webkit-scrollbar-thumb:hover { background: #8AABDB; }
-       .tab-active {
-           border-bottom-color: #8AABDB;
-           color: #3C3C3C;
-           font-weight: 600;
-       }
-       .chart-container {
-           position: relative;
-           width: 100%;
-           max-width: 600px;
-           margin-left: auto;
-           margin-right: auto;
-           height: 250px;
-           max-height: 300px;
-       }
-       @media (min-width: 768px) {
-           .chart-container {
-               height: 300px;
-           }
-       }
-   </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Peptide Compendium</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals & Professional Blue -->
+    <!-- Application Structure Plan: A two-panel SPA. Left panel for navigation, searching, and filtering of peptides by name, class, or indication. This allows for rapid discovery. The right panel displays the detailed information for the selected peptide in a structured, user-friendly format with tabs and data visualizations. This structure was chosen to transform the static reference 'book' into a dynamic 'tool', prioritizing fast information retrieval and comparison, which is how clinicians use reference materials. -->
+    <!-- Visualization & Content Choices: Peptides are listed as interactive buttons for direct access. A search bar provides text-based filtering. Dropdowns allow categorical filtering by 'Class' and 'Indication' (Goal: Organize/Filter). For each peptide, a 'Quick Reference' card uses icons for at-a-glance information (Goal: Inform). Pharmacokinetic data (Half-life, Time to Peak) is visualized using a Chart.js bar chart for intuitive comparison of drug action timelines (Goal: Compare). Dense textual information is organized into tabs (Mechanism, Dosing, Pearls, Safety) to reduce cognitive load and allow focused reading (Goal: Inform/Organize). This interactive structure, using HTML/CSS/JS and Chart.js, makes the dense clinical data far more accessible and useful than a static document. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FDFBF6;
+            color: #3C3C3C;
+        }
+        .main-content::-webkit-scrollbar { width: 6px; }
+        .main-content::-webkit-scrollbar-track { background: #f1f1f1; }
+        .main-content::-webkit-scrollbar-thumb { background: #A0C4FF; border-radius: 6px;}
+        .main-content::-webkit-scrollbar-thumb:hover { background: #8AABDB; }
+        .sidebar::-webkit-scrollbar { width: 6px; }
+        .sidebar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .sidebar::-webkit-scrollbar-thumb { background: #A0C4FF; border-radius: 6px;}
+        .sidebar::-webkit-scrollbar-thumb:hover { background: #8AABDB; }
+        .tab-active {
+            border-bottom-color: #8AABDB;
+            color: #3C3C3C;
+            font-weight: 600;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 250px;
+            max-height: 300px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 300px;
+            }
+        }
+    </style>
 </head>
 <body class="antialiased">
-   <div class="flex h-screen bg-[#FDFBF6]">
-       <!-- Sidebar -->
-       <aside class="sidebar w-full md:w-1/3 lg:w-1/4 xl:w-1/5 bg-white border-r border-gray-200 flex flex-col p-4 overflow-y-auto">
-           <h1 class="text-2xl font-bold text-gray-800 mb-1">The Peptide Compendium</h1>
-           <p class="text-sm text-gray-500 mb-4">Interactive Reference</p>
-          
-           <input type="text" id="searchInput" placeholder="Search peptides..." class="w-full px-3 py-2 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-[#A0C4FF]">
+    <div class="flex h-screen bg-[#FDFBF6]">
+        <!-- Sidebar -->
+        <aside class="sidebar w-full md:w-1/3 lg:w-1/4 xl:w-1/5 bg-white border-r border-gray-200 flex flex-col p-4 overflow-y-auto">
+            <h1 class="text-2xl font-bold text-gray-800 mb-1">The Peptide Compendium</h1>
+            <p class="text-sm text-gray-500 mb-4">Interactive Reference</p>
+            
+            <input type="text" id="searchInput" placeholder="Search peptides..." class="w-full px-3 py-2 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-[#A0C4FF]">
 
+            <div class="mb-4">
+                <label for="classFilter" class="block text-sm font-medium text-gray-700 mb-1">Filter by Class</label>
+                <select id="classFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#A0C4FF]">
+                    <option value="">All Classes</option>
+                </select>
+            </div>
 
-           <div class="mb-4">
-               <label for="classFilter" class="block text-sm font-medium text-gray-700 mb-1">Filter by Class</label>
-               <select id="classFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#A0C4FF]">
-                   <option value="">All Classes</option>
-               </select>
-           </div>
+            <div class="mb-4">
+                <label for="indicationFilter" class="block text-sm font-medium text-gray-700 mb-1">Filter by Indication</label>
+                <select id="indicationFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#A0C4FF]">
+                    <option value="">All Indications</option>
+                </select>
+            </div>
+            
+            <nav id="peptideList" class="flex-grow space-y-2"></nav>
 
+            <!-- Footer with License Info -->
+            <footer class="text-xs text-center text-gray-400 p-4 border-t border-gray-200 mt-auto">
+                Copyright &copy; 2025 Jobby John, PharmD, FACA. All Rights Reserved.
+            </footer>
+        </aside>
 
-           <div class="mb-4">
-               <label for="indicationFilter" class="block text-sm font-medium text-gray-700 mb-1">Filter by Indication</label>
-               <select id="indicationFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#A0C4FF]">
-                   <option value="">All Indications</option>
-               </select>
-           </div>
-          
-           <nav id="peptideList" class="flex-grow space-y-2"></nav>
+        <!-- Main Content -->
+        <main id="mainContent" class="main-content flex-grow p-4 sm:p-6 lg:p-8 overflow-y-auto">
+            <!-- Content will be injected here -->
+        </main>
+    </div>
 
-
-           <!-- Footer with License Info -->
-           <footer class="text-xs text-center text-gray-400 p-4 border-t border-gray-200 mt-auto">
-               Copyright &copy; 2025 Jobby John, PharmD, FACA. All Rights Reserved.
-           </footer>
-       </aside>
-
-
-       <!-- Main Content -->
-       <main id="mainContent" class="main-content flex-grow p-4 sm:p-6 lg:p-8 overflow-y-auto">
-           <!-- Content will be injected here -->
-       </main>
-   </div>
-
-
-   <script>
-       const peptideData = [
-           {
-               id: 'intro',
-               name: 'Introduction',
-               content: {
-                   title: 'The Peptide Compendium: A Practical Reference',
-                   author: 'Authored by Jobby John, PharmD, FACA',
-                   foreword: `The modern healthcare landscape is witnessing a rapid evolution in the use of peptides and compounded injectables. While FDA-approved uses exist for some agents, a growing number of prescribers, pharmacists, and healthcare innovators are utilizing compounded peptides to optimize metabolic health, performance, recovery, and longevity for a diverse patient population. This reference book is designed to bridge the gap between anecdotal experience and evidence-based practice, providing concise, clinically actionable summaries of the most important compounded peptides in contemporary medicine.`,
-                   guide: `Each monograph follows a consistent structure, offering: Mechanism of action, Pharmacokinetics/dynamics, Dosing and titration, Clinical pearls, Safety and monitoring, and References.`,
-                   disclaimer: `All protocols herein are for educational reference only. Therapy should be individualized, and prescribers must ensure appropriateness for each patient. Regulatory status of compounded peptides may change; always review federal and state guidelines.`,
-                   pearlsTitle: `Clinical Pearls: Compounded Peptides in Modern Practice`,
-                   pearls: [
-                       'Most peptides are administered subcutaneously using U-100 insulin syringes.',
-                       'Optimal timing, cycling, and monitoring (lab and clinical) are key to safety and efficacy.',
-                       'Individual response varies; adjust protocols based on labs, patient outcomes, and adverse effects.',
-                       'Many peptides are not FDA-approved for these indications; evidence base is rapidly evolving.'
-                   ]
-               }
-           },
-           {
-               id: "kisspeptin",
-               name: "Kisspeptin",
-               class: "Neuropeptide (GnRH modulator)",
-               indication: ["TRT adjunct", "fertility", "hypogonadism"],
-               quickRef: {
-                   formulation: "100–200 mcg/mL, 5 mL vial",
-                   route: "Subcutaneous (SQ, U-100 insulin syringe)",
-                   dosing: "100–200 mcg SQ daily (0.1–0.2 mL)"
-               },
-               mechanism: "Kisspeptin binds to GPR54 receptors on hypothalamic GnRH neurons, stimulating GnRH release. This increases pituitary LH and FSH, ultimately raising endogenous testosterone. Kisspeptin may restore or support the hypothalamic–pituitary–gonadal axis in patients on TRT, especially those wishing to maintain fertility.",
-               pk: {
-                   absorption: "Rapid after SQ injection",
-                   peakTime: 30, // in minutes
-                   peakTimeMax: 60,
-                   halfLife: 28, // in minutes
-                   metabolism: "Proteolytic cleavage by peptidases",
-                   excretion: "Primarily renal",
-               },
-               dosing: [
-                   "Start at 100–200 mcg SQ daily (0.1–0.2 mL)",
-                   "Reassess after 4–6 weeks; titrate based on labs and clinical response",
-                   "Duration: 8–12 weeks typical, followed by off-cycle or maintenance"
-               ],
-               pearls: [
-                   "Useful in men on TRT who wish to preserve fertility or avoid testicular atrophy",
-                   "Alternative or adjunct to hCG or clomiphene",
-                   "May help in functional hypogonadism"
-               ],
-               safety: {
-                   monitoring: "Baseline and q8–12w: LH, FSH, total testosterone. Consider semen analysis if fertility preservation is a goal.",
-                   contraindications: "Hormone-sensitive malignancy, unexplained infertility, pregnancy, pituitary/hypothalamic disorders.",
-                   sideEffects: "Mild headache, flushing, mood lability, injection site reactions."
-               }
-           },
-           {
-               id: "5-amino-1mq",
-               name: "5-amino-1MQ",
-               class: "Small molecule NNMT inhibitor",
-               indication: ["Mitochondrial support", "metabolic support", "neuroprotection"],
-               quickRef: {
-                   formulation: "50–150 mg capsules; 150 mcg/mL injection",
-                   route: "Oral (PO) or subcutaneous (SQ)",
-                   dosing: "PO: 50–150 mg daily; SQ: 150 mcg daily"
-               },
-               mechanism: "5-amino-1MQ inhibits nicotinamide N-methyltransferase (NNMT), an enzyme involved in cellular energy metabolism. By inhibiting NNMT, it increases NAD+ levels and supports mitochondrial function, leading to improved cellular energy, metabolism, and possibly anti-inflammatory and neuroprotective effects.",
-               pk: {
-                   absorption: "Rapid GI absorption (oral); rapid via SQ injection",
-                   peakTime: null,
-                   halfLife: 120, // in minutes (estimated 2-6 hours)
-                   halfLifeMax: 360,
-                   metabolism: "Hepatic, by oxidation and conjugation",
-                   excretion: "Renal",
-               },
-               dosing: [
-                   "Start at 50 mg PO daily, may increase to 150 mg daily in divided doses as tolerated",
-                   "If SQ: 150 mcg daily",
-                   "Titrate based on tolerability and clinical response",
-                   "Typical trial: 8–12 weeks"
-               ],
-               pearls: [
-                   "Studied in animal models for obesity, neuroprotection, and cellular longevity",
-                   "May enhance metabolic flexibility and reduce inflammation",
-                   "Still considered experimental in humans—use with patient consent and monitoring"
-               ],
-               safety: {
-                   monitoring: "Monitor LFTs, renal function, glucose (if used for metabolic disease).",
-                   contraindications: "Pregnancy, lactation, active cancer, severe hepatic or renal impairment.",
-                   sideEffects: "Mild GI upset (oral), injection site irritation (SQ), rare headache or insomnia."
-               }
-           },
-           {
-               id: "sermorelin",
-               name: "Sermorelin",
-               class: "GHRH analog",
-               indication: ["GH deficiency", "anti-aging", "body composition"],
-               quickRef: {
-                   formulation: "1–2 mg/mL, 5 mL vial",
-                   route: "Subcutaneous injection (U-100 syringe)",
-                   dosing: "200–300 mcg SQ at bedtime, 5 days on/2 off"
-               },
-               mechanism: "Sermorelin is an analog of endogenous GHRH. It stimulates the pituitary gland to increase secretion of growth hormone (GH), which in turn raises IGF-1 levels and supports muscle growth, bone density, tissue repair, metabolic health, and cognitive function.",
-               pk: {
-                   absorption: "Rapid after SQ injection",
-                   peakTime: 5, // in minutes
-                   peakTimeMax: 20,
-                   halfLife: 11, // in minutes
-                   halfLifeMax: 12,
-                   metabolism: "Proteolytic degradation",
-                   excretion: "Renal",
-               },
-               dosing: [
-                   "200–300 mcg SQ at bedtime",
-                   "Typically, 5 nights on, 2 off per week",
-                   "Adjust based on IGF-1 levels and clinical response",
-                   "Duration: 3–6 months, then reassess"
-               ],
-               pearls: [
-                   "Mimics physiological GH pulsatility (especially when given at night)",
-                   "Lower risk of acromegaly or 'GH excess' side effects compared to exogenous GH",
-                   "May improve sleep quality and recovery in adults with suboptimal GH"
-               ],
-               safety: {
-                   monitoring: "Labs: IGF-1, fasting glucose, lipid panel, LFTs every 8–12 weeks.",
-                   contraindications: "Active/recent malignancy, pregnancy, uncontrolled diabetes, pituitary dysfunction.",
-                   sideEffects: "Mild edema, headache, injection site irritation, increased appetite."
-               }
-           },
+    <script>
+        const peptideData = [
             {
-               id: "hexarelin",
-               name: "Hexarelin",
-               class: "Synthetic GHRP",
-               indication: ["Muscle/strength gain", "body composition", "recovery"],
-               quickRef: {
-                   formulation: "1–2 mg/mL, 5 mL vial",
-                   route: "Subcutaneous injection (U-100 syringe)",
-                   dosing: "200–300 mcg SQ at bedtime, 5 days on/2 off"
-               },
-               mechanism: "Hexarelin is a synthetic peptide that stimulates the ghrelin receptor (GHSR-1a), causing robust GH release. Unlike GHRH analogs, it may also have direct effects on cardiac muscle and metabolic processes.",
-               pk: {
-                   absorption: "Rapid SQ",
-                   peakTime: 30,
-                   peakTimeMax: 60,
-                   halfLife: 55,
-                   metabolism: "Proteolytic breakdown",
-                   excretion: "Renal",
-               },
-               dosing: [
-                   "Start at 200 mcg SQ at bedtime (0.2 mL)",
-                   "May titrate to 300 mcg SQ",
-                   "5 days on, 2 off per week",
-                   "Duration: 8–12 weeks per cycle"
-               ],
-               pearls: [
-                   "More potent than GHRP-2/GHRP-6 for GH stimulation",
-                   "May increase hunger and mild water retention",
-                   "Cardiac safety is generally good but use caution with history of cardiac disease"
-               ],
-               safety: {
-                   monitoring: "Labs: IGF-1, glucose, ECG if cardiac history.",
-                   contraindications: "Recent cancer, severe heart disease, pregnancy.",
-                   sideEffects: "Edema, appetite increase, headache, injection site irritation."
-               }
-           },
-           {
-               id: "tesamorelin",
-               name: "Tesamorelin",
-               class: "GHRH analog",
-               indication: ["HIV-associated lipodystrophy", "metabolic optimization", "body composition"],
-               quickRef: {
-                   formulation: "2 mg/vial (lyophilized powder)",
-                   route: "Subcutaneous injection",
-                   dosing: "1–2 mg SQ daily, 5 days on/2 off"
-               },
-               mechanism: "Tesamorelin is a stabilized GHRH analog that selectively binds to pituitary GHRH receptors, increasing endogenous GH and IGF-1 production. Uniquely effective in reducing visceral adipose tissue.",
-               pk: {
-                   absorption: "Complete after SQ injection",
-                   peakTime: 60,
-                   peakTimeMax: 120,
-                   halfLife: 25,
-                   halfLifeMax: 30,
-                   metabolism: "Proteolysis",
-                   excretion: "Renal",
-               },
-               dosing: [
-                   "Usual: 2 mg SQ once daily",
-                   "For metabolic/anti-aging: may use 1 mg, 5 days on, 2 off",
-                   "Reassess after 8–12 weeks for efficacy/safety"
-               ],
-               pearls: [
-                   "Only peptide in this class with FDA approval (for HIV lipodystrophy)",
-                   "Reduces visceral adiposity and improves lipid profile",
-                   "Use with caution in patients with glucose intolerance"
-               ],
-               safety: {
-                   monitoring: "Labs: IGF-1, fasting glucose, lipid panel, liver enzymes, q8–12 weeks.",
-                   contraindications: "Active malignancy, pregnancy, uncontrolled diabetes.",
-                   sideEffects: "Injection site irritation, arthralgia, peripheral edema, headache."
-               }
-           },
-           {
-               id: "bpc-157",
-               name: "BPC-157",
-               class: "Synthetic pentadecapeptide",
-               indication: ["Tissue healing", "GI protection", "musculoskeletal repair"],
-               quickRef: {
-                   formulation: "200–300 mcg/mL injection; 500 mg capsules",
-                   route: "Subcutaneous (SQ), oral (PO)",
-                   dosing: "200–300 mcg SQ daily; 500 mg PO daily"
-               },
-               mechanism: "BPC-157 is a synthetic peptide derived from a natural gastric peptide. It accelerates healing via angiogenesis, collagen synthesis, and modulation of growth factor signaling. Has anti-inflammatory, neuroprotective, and gastroprotective actions in preclinical models.",
-               pk: {
-                   absorption: "High after SQ; variable oral",
-                   peakTime: null,
-                   halfLife: 60,
-                   halfLifeMax: 120,
-                   metabolism: "Proteolytic",
-                   excretion: "Renal",
-               },
-               dosing: [
-                   "SQ: 200–300 mcg daily, 5 days on/2 off, for 4–8 weeks",
-                   "PO: 500 mg daily, as tolerated"
-               ],
-               pearls: [
-                   "Widely used in sports medicine and functional medicine",
-                   "Benefits for tendon, ligament, and GI repair based on preclinical/limited clinical data",
-                   "Very low toxicity in animal studies"
-               ],
-               safety: {
-                   monitoring: "Well tolerated; monitor for rare allergic reaction.",
-                   contraindications: "Pregnancy, lactation, active cancer (precaution).",
-                   sideEffects: "Generally well-tolerated."
-               }
-           },
-           {
-               id: "tirzepatide",
-               name: "Tirzepatide",
-               class: "Dual GIP/GLP-1 receptor agonist",
-               indication: ["Type 2 diabetes", "obesity", "weight loss"],
-               quickRef: {
-                   formulation: "Variable (2.5–15 mg/mL)",
-                   route: "Subcutaneous (SQ) injection",
-                   dosing: "2.5–15 mg SQ weekly (titration)"
-               },
-               mechanism: "Tirzepatide is a novel dual agonist of the GIP and GLP-1 receptors, stimulating glucose-dependent insulin secretion, suppressing glucagon, and reducing appetite.",
-               pk: {
-                   absorption: "Complete after SQ",
-                   peakTime: null,
-                   halfLife: 120 * 60, // ~5 days in minutes
-                   metabolism: "Proteolytic",
-                   excretion: "Renal",
-               },
-               dosing: [
-                   "Start: 2.5 mg SQ weekly x 4 weeks",
-                   "Titrate every 4 weeks: 5 mg → 7.5 mg → 10 mg → 12.5 mg → 15 mg (max)",
-                   "Use lowest effective dose for maintenance"
-               ],
-               pearls: [
-                   "Among the most effective injectables for weight loss (mean ~20% body weight in trials)",
-                   "Also improves A1c and cardiometabolic markers",
-                   "Titrate slowly to minimize GI side effects"
-               ],
-               safety: {
-                   monitoring: "Labs: A1c, glucose, renal function, lipids.",
-                   contraindications: "Medullary thyroid carcinoma, MEN2 syndrome, severe GI disease.",
-                   sideEffects: "Nausea, vomiting, diarrhea, constipation, rarely pancreatitis."
-               }
-           },
-           {
-               id: "semaglutide",
-               name: "Semaglutide",
-               class: "GLP-1 receptor agonist",
-               indication: ["Type 2 diabetes", "obesity", "cardiometabolic health"],
-               quickRef: {
-                   formulation: "1.2 mg/mL (varies)",
-                   route: "Subcutaneous (SQ) injection",
-                   dosing: "0.25–2.4 mg SQ weekly (titration)"
-               },
-               mechanism: "Semaglutide mimics endogenous GLP-1, increasing insulin, suppressing glucagon, reducing appetite, delaying gastric emptying, and supporting weight loss.",
-               pk: {
-                   absorption: "Complete after SQ",
-                   peakTime: null,
-                   halfLife: 168 * 60, // ~7 days in minutes
-                   metabolism: "Proteolytic",
-                   excretion: "Renal",
-               },
-               dosing: [
-                   "Week 1: 0.25 mg SQ weekly",
-                   "Week 2: 0.5 mg",
-                   "Week 3: 1.0 mg",
-                   "Titrate to max: 2.4 mg weekly for weight loss (maintenance: lowest effective dose)"
-               ],
-               pearls: [
-                   "Powerful for weight loss, A1c reduction, cardiometabolic risk reduction",
-                   "Titrate slowly for GI tolerability"
-               ],
-               safety: {
-                   monitoring: "Labs: A1c, glucose, renal function.",
-                   contraindications: "Medullary thyroid carcinoma, MEN2, pancreatitis history.",
-                   sideEffects: "Nausea, vomiting, diarrhea, constipation, rarely pancreatitis."
-               }
-           },
-           {
-               id: "tesofensine",
-               name: "Tesofensine",
-               class: "Triple monoamine reuptake inhibitor",
-               indication: ["Obesity", "weight loss"],
-               quickRef: {
-                   formulation: "50 mg capsule",
-                   route: "Oral (PO)",
-                   dosing: "50 mg PO daily"
-               },
-               mechanism: "Tesofensine inhibits reuptake of serotonin, noradrenaline, and dopamine in the brain, leading to reduced appetite and increased energy expenditure.",
-               pk: {
-                   absorption: "Well absorbed PO",
-                   peakTime: null,
-                   halfLife: 192 * 60, // ~8 days in minutes
-                   metabolism: "Hepatic (CYP3A4)",
-                   excretion: "Fecal/renal",
-               },
-               dosing: [
-                   "Start/maintain: 50 mg PO daily",
-                   "Use for up to 24 weeks; monitor BP/HR"
-               ],
-               pearls: [
-                   "Causes more weight loss than any other oral agent (mean ~10% body weight)",
-                   "May improve metabolic markers and mood",
-                   "Monitor for hypertension, tachycardia, insomnia"
-               ],
-               safety: {
-                   monitoring: "Labs: BP, HR, mental health status.",
-                   contraindications: "Uncontrolled HTN, cardiac disease, history of psychosis.",
-                   sideEffects: "Insomnia, increased BP/HR, dry mouth, headache."
-               }
-           },
-       ];
+                id: 'intro',
+                name: 'Introduction',
+                content: {
+                    title: 'The Peptide Compendium: A Practical Reference',
+                    author: 'Authored by Jobby John, PharmD, FACA',
+                    foreword: `The modern healthcare landscape is witnessing a rapid evolution in the use of peptides and compounded injectables. While FDA-approved uses exist for some agents, a growing number of prescribers, pharmacists, and healthcare innovators are utilizing compounded peptides to optimize metabolic health, performance, recovery, and longevity for a diverse patient population. This reference book is designed to bridge the gap between anecdotal experience and evidence-based practice, providing concise, clinically actionable summaries of the most important compounded peptides in contemporary medicine.`,
+                    guide: `Each monograph follows a consistent structure, offering: Mechanism of action, Pharmacokinetics/dynamics, Dosing and titration, Clinical pearls, Safety and monitoring, and References.`,
+                    disclaimer: `All protocols herein are for educational reference only. Therapy should be individualized, and prescribers must ensure appropriateness for each patient. Regulatory status of compounded peptides may change; always review federal and state guidelines.`,
+                    pearlsTitle: `Clinical Pearls: Compounded Peptides in Modern Practice`,
+                    pearls: [
+                        'Most peptides are administered subcutaneously using U-100 insulin syringes.',
+                        'Optimal timing, cycling, and monitoring (lab and clinical) are key to safety and efficacy.',
+                        'Individual response varies; adjust protocols based on labs, patient outcomes, and adverse effects.',
+                        'Many peptides are not FDA-approved for these indications; evidence base is rapidly evolving.'
+                    ]
+                }
+            },
+            {
+                id: "kisspeptin",
+                name: "Kisspeptin",
+                class: "Neuropeptide (GnRH modulator)",
+                indication: ["TRT adjunct", "fertility", "hypogonadism"],
+                quickRef: {
+                    formulation: "100–200 mcg/mL, 5 mL vial",
+                    route: "Subcutaneous (SQ, U-100 insulin syringe)",
+                    dosing: "100–200 mcg SQ daily (0.1–0.2 mL)"
+                },
+                mechanism: "Kisspeptin binds to GPR54 receptors on hypothalamic GnRH neurons, stimulating GnRH release. This increases pituitary LH and FSH, ultimately raising endogenous testosterone. Kisspeptin may restore or support the hypothalamic–pituitary–gonadal axis in patients on TRT, especially those wishing to maintain fertility.",
+                pk: {
+                    absorption: "Rapid after SQ injection",
+                    peakTime: 30, 
+                    peakTimeMax: 60,
+                    halfLife: 28, 
+                    metabolism: "Proteolytic cleavage by peptidases",
+                    excretion: "Primarily renal",
+                },
+                dosing: [
+                    "Start at 100–200 mcg SQ daily (0.1–0.2 mL)",
+                    "Reassess after 4–6 weeks; titrate based on labs and clinical response",
+                    "Duration: 8–12 weeks typical, followed by off-cycle or maintenance"
+                ],
+                pearls: [
+                    "Useful in men on TRT who wish to preserve fertility or avoid testicular atrophy",
+                    "Alternative or adjunct to hCG or clomiphene",
+                    "May help in functional hypogonadism"
+                ],
+                safety: {
+                    monitoring: "Baseline and q8–12w: LH, FSH, total testosterone. Consider semen analysis if fertility preservation is a goal.",
+                    contraindications: "Hormone-sensitive malignancy, unexplained infertility, pregnancy, pituitary/hypothalamic disorders.",
+                    sideEffects: "Mild headache, flushing, mood lability, injection site reactions."
+                }
+            },
+            {
+                id: "5-amino-1mq",
+                name: "5-amino-1MQ",
+                class: "Small molecule NNMT inhibitor",
+                indication: ["Mitochondrial support", "metabolic support", "neuroprotection"],
+                quickRef: {
+                    formulation: "50–150 mg capsules; 150 mcg/mL injection",
+                    route: "Oral (PO) or subcutaneous (SQ)",
+                    dosing: "PO: 50–150 mg daily; SQ: 150 mcg daily"
+                },
+                mechanism: "5-amino-1MQ inhibits nicotinamide N-methyltransferase (NNMT), an enzyme involved in cellular energy metabolism. By inhibiting NNMT, it increases NAD+ levels and supports mitochondrial function, leading to improved cellular energy, metabolism, and possibly anti-inflammatory and neuroprotective effects.",
+                pk: {
+                    absorption: "Rapid GI absorption (oral); rapid via SQ injection",
+                    peakTime: null,
+                    halfLife: 120, 
+                    halfLifeMax: 360,
+                    metabolism: "Hepatic, by oxidation and conjugation",
+                    excretion: "Renal",
+                },
+                dosing: [
+                    "Start at 50 mg PO daily, may increase to 150 mg daily in divided doses as tolerated",
+                    "If SQ: 150 mcg daily",
+                    "Titrate based on tolerability and clinical response",
+                    "Typical trial: 8–12 weeks"
+                ],
+                pearls: [
+                    "Studied in animal models for obesity, neuroprotection, and cellular longevity",
+                    "May enhance metabolic flexibility and reduce inflammation",
+                    "Still considered experimental in humans—use with patient consent and monitoring"
+                ],
+                safety: {
+                    monitoring: "Monitor LFTs, renal function, glucose (if used for metabolic disease).",
+                    contraindications: "Pregnancy, lactation, active cancer, severe hepatic or renal impairment.",
+                    sideEffects: "Mild GI upset (oral), injection site irritation (SQ), rare headache or insomnia."
+                }
+            },
+            {
+                id: "sermorelin",
+                name: "Sermorelin",
+                class: "GHRH analog",
+                indication: ["GH deficiency", "anti-aging", "body composition"],
+                quickRef: {
+                    formulation: "1–2 mg/mL, 5 mL vial",
+                    route: "Subcutaneous injection (U-100 syringe)",
+                    dosing: "200–300 mcg SQ at bedtime, 5 days on/2 off"
+                },
+                mechanism: "Sermorelin is an analog of endogenous GHRH. It stimulates the pituitary gland to increase secretion of growth hormone (GH), which in turn raises IGF-1 levels and supports muscle growth, bone density, tissue repair, metabolic health, and cognitive function.",
+                pk: {
+                    absorption: "Rapid after SQ injection",
+                    peakTime: 5, 
+                    peakTimeMax: 20,
+                    halfLife: 11, 
+                    halfLifeMax: 12,
+                    metabolism: "Proteolytic degradation",
+                    excretion: "Renal",
+                },
+                dosing: [
+                    "200–300 mcg SQ at bedtime",
+                    "Typically, 5 nights on, 2 off per week",
+                    "Adjust based on IGF-1 levels and clinical response",
+                    "Duration: 3–6 months, then reassess"
+                ],
+                pearls: [
+                    "Mimics physiological GH pulsatility (especially when given at night)",
+                    "Lower risk of acromegaly or 'GH excess' side effects compared to exogenous GH",
+                    "May improve sleep quality and recovery in adults with suboptimal GH"
+                ],
+                safety: {
+                    monitoring: "Labs: IGF-1, fasting glucose, lipid panel, LFTs every 8–12 weeks.",
+                    contraindications: "Active/recent malignancy, pregnancy, uncontrolled diabetes, pituitary dysfunction.",
+                    sideEffects: "Mild edema, headache, injection site irritation, increased appetite."
+                }
+            },
+             {
+                id: "hexarelin",
+                name: "Hexarelin",
+                class: "Synthetic GHRP",
+                indication: ["Muscle/strength gain", "body composition", "recovery"],
+                quickRef: {
+                    formulation: "1–2 mg/mL, 5 mL vial",
+                    route: "Subcutaneous injection (U-100 syringe)",
+                    dosing: "200–300 mcg SQ at bedtime, 5 days on/2 off"
+                },
+                mechanism: "Hexarelin is a synthetic peptide that stimulates the ghrelin receptor (GHSR-1a), causing robust GH release. Unlike GHRH analogs, it may also have direct effects on cardiac muscle and metabolic processes.",
+                pk: {
+                    absorption: "Rapid SQ",
+                    peakTime: 30,
+                    peakTimeMax: 60,
+                    halfLife: 55,
+                    metabolism: "Proteolytic breakdown",
+                    excretion: "Renal",
+                },
+                dosing: [
+                    "Start at 200 mcg SQ at bedtime (0.2 mL)",
+                    "May titrate to 300 mcg SQ",
+                    "5 days on, 2 off per week",
+                    "Duration: 8–12 weeks per cycle"
+                ],
+                pearls: [
+                    "More potent than GHRP-2/GHRP-6 for GH stimulation",
+                    "May increase hunger and mild water retention",
+                    "Cardiac safety is generally good but use caution with history of cardiac disease"
+                ],
+                safety: {
+                    monitoring: "Labs: IGF-1, glucose, ECG if cardiac history.",
+                    contraindications: "Recent cancer, severe heart disease, pregnancy.",
+                    sideEffects: "Edema, appetite increase, headache, injection site irritation."
+                }
+            },
+            {
+                id: "tesamorelin",
+                name: "Tesamorelin",
+                class: "GHRH analog (modified)",
+                indication: ["HIV-associated lipodystrophy", "metabolic optimization", "body composition"],
+                quickRef: {
+                    formulation: "2 mg/vial (lyophilized powder)",
+                    route: "Subcutaneous injection",
+                    dosing: "1–2 mg SQ daily, 5 days on/2 off"
+                },
+                mechanism: "Tesamorelin is a stabilized GHRH analog that selectively binds to pituitary GHRH receptors, increasing endogenous GH and IGF-1 production. Uniquely effective in reducing visceral adipose tissue.",
+                pk: {
+                    absorption: "Complete after SQ injection",
+                    peakTime: 60,
+                    peakTimeMax: 120,
+                    halfLife: 25,
+                    halfLifeMax: 30,
+                    metabolism: "Proteolysis",
+                    excretion: "Renal",
+                },
+                dosing: [
+                    "Usual: 2 mg SQ once daily",
+                    "For metabolic/anti-aging: may use 1 mg, 5 days on, 2 off",
+                    "Reassess after 8–12 weeks for efficacy/safety"
+                ],
+                pearls: [
+                    "Only peptide in this class with FDA approval (for HIV lipodystrophy)",
+                    "Reduces visceral adiposity and improves lipid profile",
+                    "Use with caution in patients with glucose intolerance"
+                ],
+                safety: {
+                    monitoring: "Labs: IGF-1, fasting glucose, lipid panel, liver enzymes, q8–12 weeks.",
+                    contraindications: "Active malignancy, pregnancy, uncontrolled diabetes.",
+                    sideEffects: "Injection site irritation, arthralgia, peripheral edema, headache."
+                }
+            },
+            {
+                id: "bpc-157",
+                name: "BPC-157",
+                class: "Synthetic pentadecapeptide",
+                indication: ["Tissue healing", "GI protection", "musculoskeletal repair"],
+                quickRef: {
+                    formulation: "200–300 mcg/mL injection; 500 mg capsules",
+                    route: "Subcutaneous (SQ), oral (PO)",
+                    dosing: "200–300 mcg SQ daily; 500 mg PO daily"
+                },
+                mechanism: "BPC-157 is a synthetic peptide derived from a natural gastric peptide. It accelerates healing via angiogenesis, collagen synthesis, and modulation of growth factor signaling. Has anti-inflammatory, neuroprotective, and gastroprotective actions in preclinical models.",
+                pk: {
+                    absorption: "High after SQ; variable oral",
+                    peakTime: null,
+                    halfLife: 60,
+                    halfLifeMax: 120,
+                    metabolism: "Proteolytic",
+                    excretion: "Renal",
+                },
+                dosing: [
+                    "SQ: 200–300 mcg daily, 5 days on/2 off, for 4–8 weeks",
+                    "PO: 500 mg daily, as tolerated"
+                ],
+                pearls: [
+                    "Widely used in sports medicine and functional medicine",
+                    "Benefits for tendon, ligament, and GI repair based on preclinical/limited clinical data",
+                    "Very low toxicity in animal studies"
+                ],
+                safety: {
+                    monitoring: "Well tolerated; monitor for rare allergic reaction.",
+                    contraindications: "Pregnancy, lactation, active cancer (precaution).",
+                    sideEffects: "Generally well-tolerated."
+                }
+            },
+            {
+                id: "gonadorelin",
+                name: "Gonadorelin",
+                class: "Synthetic GnRH",
+                indication: ["Hypogonadism", "fertility", "TRT adjunct"],
+                quickRef: {
+                    formulation: "100 mcg/mL",
+                    route: "Subcutaneous (SQ)",
+                    dosing: "100 mcg SQ twice weekly"
+                },
+                mechanism: "Gonadorelin is a synthetic form of natural GnRH. It stimulates the pituitary to secrete LH and FSH, driving endogenous testosterone production and spermatogenesis.",
+                pk: {
+                    absorption: "Rapid after SQ",
+                    peakTime: 20,
+                    peakTimeMax: 30,
+                    halfLife: 2,
+                    halfLifeMax: 4,
+                    metabolism: "Hepatic and tissue peptidases",
+                    excretion: "Renal",
+                },
+                dosing: ["100 mcg SQ twice weekly, adjust as needed for LH/FSH response"],
+                pearls: ["Used for fertility preservation in men on TRT", "May be given in a pulsatile fashion for optimal effect", "Can be used diagnostically for pituitary/gonadal axis function"],
+                safety: {
+                    monitoring: "Labs: LH, FSH, testosterone, semen analysis (if fertility goal).",
+                    contraindications: "Hormone-sensitive cancers, pituitary disorders, pregnancy.",
+                    sideEffects: "Generally well-tolerated."
+                }
+            },
+            {
+                id: "nad",
+                name: "NAD+",
+                class: "Cellular coenzyme",
+                indication: ["Cellular repair", "neuroprotection", "anti-aging"],
+                quickRef: {
+                    formulation: "40 mg/mL injectable; 1 spray/0.1 mL nasal",
+                    route: "Subcutaneous (SQ), Intranasal",
+                    dosing: "SQ: 40 mg 3x/week; Nasal: 1 spray/nostril 1-2x daily"
+                },
+                mechanism: "NAD+ is essential for cellular energy metabolism, DNA repair, and sirtuin activation. Levels decline with age and chronic disease; repletion may improve mitochondrial and neurocognitive function.",
+                pk: {
+                    absorption: "Complete after SQ; rapid nasal mucosa",
+                    peakTime: null,
+                    halfLife: 60,
+                    halfLifeMax: 120,
+                    metabolism: "Converted to nicotinamide, NADP",
+                    excretion: "Urinary as metabolites",
+                },
+                dosing: ["40 mg SQ three times a week", "Nasal: 1 spray each nostril, 1–2 times daily"],
+                pearls: ["May improve fatigue, cognitive clarity, and cellular resilience", "Part of many anti-aging and neuroprotection protocols", "Can cause flushing or lightheadedness if dosed rapidly"],
+                safety: {
+                    monitoring: "Well tolerated; monitor for GI upset or site irritation.",
+                    contraindications: "Caution in patients with gout (may increase uric acid).",
+                    sideEffects: "Flushing, lightheadedness."
+                }
+            },
+            {
+                id: "tirzepatide",
+                name: "Tirzepatide",
+                class: "Dual GIP/GLP-1 receptor agonist",
+                indication: ["Type 2 diabetes", "obesity", "weight loss"],
+                quickRef: {
+                    formulation: "Variable (2.5–15 mg/mL)",
+                    route: "Subcutaneous (SQ) injection",
+                    dosing: "2.5–15 mg SQ weekly (titration)"
+                },
+                mechanism: "Tirzepatide is a novel dual agonist of the GIP and GLP-1 receptors, stimulating glucose-dependent insulin secretion, suppressing glucagon, and reducing appetite.",
+                pk: {
+                    absorption: "Complete after SQ",
+                    peakTime: null,
+                    halfLife: 120 * 60, // ~5 days in minutes
+                    metabolism: "Proteolytic",
+                    excretion: "Renal",
+                },
+                dosing: [
+                    "Start: 2.5 mg SQ weekly x 4 weeks",
+                    "Titrate every 4 weeks: 5 mg → 7.5 mg → 10 mg → 12.5 mg → 15 mg (max)",
+                    "Use lowest effective dose for maintenance"
+                ],
+                pearls: [
+                    "Among the most effective injectables for weight loss (mean ~20% body weight in trials)",
+                    "Also improves A1c and cardiometabolic markers",
+                    "Titrate slowly to minimize GI side effects"
+                ],
+                safety: {
+                    monitoring: "Labs: A1c, glucose, renal function, lipids.",
+                    contraindications: "Medullary thyroid carcinoma, MEN2 syndrome, severe GI disease.",
+                    sideEffects: "Nausea, vomiting, diarrhea, constipation, rarely pancreatitis."
+                }
+            },
+            {
+                id: "tesofensine",
+                name: "Tesofensine",
+                class: "Triple monoamine reuptake inhibitor",
+                indication: ["Obesity", "weight loss"],
+                quickRef: {
+                    formulation: "50 mg capsule",
+                    route: "Oral (PO)",
+                    dosing: "50 mg PO daily"
+                },
+                mechanism: "Tesofensine inhibits reuptake of serotonin, noradrenaline, and dopamine in the brain, leading to reduced appetite and increased energy expenditure.",
+                pk: {
+                    absorption: "Well absorbed PO",
+                    peakTime: null,
+                    halfLife: 192 * 60, // ~8 days in minutes
+                    metabolism: "Hepatic (CYP3A4)",
+                    excretion: "Fecal/renal",
+                },
+                dosing: [
+                    "Start/maintain: 50 mg PO daily",
+                    "Use for up to 24 weeks; monitor BP/HR"
+                ],
+                pearls: [
+                    "Causes more weight loss than any other oral agent (mean ~10% body weight)",
+                    "May improve metabolic markers and mood",
+                    "Monitor for hypertension, tachycardia, insomnia"
+                ],
+                safety: {
+                    monitoring: "Labs: BP, HR, mental health status.",
+                    contraindications: "Uncontrolled HTN, cardiac disease, history of psychosis.",
+                    sideEffects: "Insomnia, increased BP/HR, dry mouth, headache."
+                }
+            },
+            {
+                id: "glutathione",
+                name: "Glutathione",
+                class: "Tripeptide antioxidant",
+                indication: ["Detoxification", "oxidative stress", "skin health"],
+                quickRef: {
+                    formulation: "1,000 mg/mL injection",
+                    route: "Intramuscular (IM) injection",
+                    dosing: "1,000–2,000 mg IM weekly"
+                },
+                mechanism: "Glutathione is a master antioxidant that neutralizes free radicals, detoxifies reactive metabolites, supports liver function, and modulates immune response.",
+                pk: {
+                    absorption: "Rapid after IM",
+                    peakTime: null,
+                    halfLife: 10,
+                    halfLifeMax: 20,
+                    metabolism: "Hepatic (gamma-glutamyl cycle)",
+                    excretion: "Renal",
+                },
+                dosing: ["1,000–2,000 mg IM weekly; dose as tolerated and per indication"],
+                pearls: ["Used in chronic illness, detox protocols, and for skin brightening", "May support neurocognitive and liver function", "Higher doses sometimes used in chronic disease"],
+                safety: {
+                    monitoring: "Well tolerated; rare allergic reaction or site pain.",
+                    contraindications: "None established, but avoid in G6PD deficiency.",
+                    sideEffects: "Generally well-tolerated."
+                }
+            },
+             {
+                id: "b-complex",
+                name: "B-Complex",
+                class: "Vitamin",
+                indication: ["Energy", "neuropathy", "mood"],
+                quickRef: {
+                    formulation: "1 mL IM injection",
+                    route: "Intramuscular (IM)",
+                    dosing: "1 mL IM weekly"
+                },
+                mechanism: "B vitamins are essential for cellular metabolism, nervous system health, DNA synthesis, and energy production. IM dosing bypasses GI absorption issues.",
+                 pk: {
+                    absorption: "Complete IM",
+                    peakTime: null,
+                    halfLife: null,
+                    metabolism: "Mostly hepatic",
+                    excretion: "Renal (water soluble; excess excreted)"
+                },
+                dosing: ["1 mL IM weekly, adjust per clinical need"],
+                pearls: ["Rapidly repletes stores in deficiency states (alcoholism, malnutrition, GI disease)", "May improve energy, mood, nerve health", "Can be used in protocols for chronic fatigue, neuropathy, hair loss"],
+                safety: {
+                    monitoring: "Labs: B12, folate, homocysteine (if high risk).",
+                    contraindications: "Allergy to any component.",
+                    sideEffects: "Mild soreness, rare hypersensitivity."
+                }
+            },
+            {
+                id: "vitamin-b12",
+                name: "Vitamin B12",
+                class: "Vitamin",
+                indication: ["B12 deficiency", "anemia", "neuropathy", "cognitive health"],
+                 quickRef: {
+                    formulation: "1,000 mcg/mL",
+                    route: "IM (intramuscular), SQ (subcutaneous)",
+                    dosing: "1,000 mcg IM or SQ weekly"
+                },
+                mechanism: "Vitamin B12 is essential for DNA synthesis, red blood cell formation, myelin synthesis, and energy metabolism. Injection bypasses GI absorption.",
+                pk: {
+                    absorption: "Complete IM/SQ",
+                    peakTime: null,
+                    halfLife: 144 * 60, // ~6 days
+                    metabolism: "Converted to methylcobalamin/adenosylcobalamin",
+                    excretion: "Renal (excess)"
+                },
+                dosing: ["1,000 mcg IM/SQ weekly for maintenance; daily or every other day for deficiency until repleted"],
+                pearls: ["Essential in vegans, elderly, those on metformin or PPIs", "Hydroxocobalamin preferred in severe/neurologic deficiency", "May improve mood, cognition, neuropathy"],
+                safety: {
+                    monitoring: "Monitor B12, MMA, CBC.",
+                    contraindications: "Sensitivity to cobalt.",
+                    sideEffects: "Rare allergy, local irritation."
+                }
+            },
+            {
+                id: "vitamin-d3",
+                name: "Vitamin D3",
+                class: "Vitamin",
+                indication: ["Bone health", "immune function", "deficiency"],
+                quickRef: {
+                    formulation: "10,000 IU/mL injection",
+                    route: "IM (intramuscular)",
+                    dosing: "10,000 IU IM weekly"
+                },
+                mechanism: "Vitamin D3 regulates calcium and phosphorus metabolism, supports bone mineralization, and modulates immune function.",
+                pk: {
+                    absorption: "Complete IM; oral also effective",
+                    peakTime: null,
+                    halfLife: 360 * 60, // ~15 days
+                    metabolism: "Hepatic and renal conversion to 25(OH)D and 1,25(OH)2D",
+                    excretion: "Biliary"
+                },
+                dosing: ["10,000 IU IM weekly for deficiency or maintenance", "Adjust based on serum 25(OH)D levels"],
+                pearls: ["Monitor for toxicity in high doses (hypercalcemia)", "Essential in those with low sun exposure, malabsorption, osteoporosis"],
+                safety: {
+                    monitoring: "Labs: 25(OH)D, calcium.",
+                    contraindications: "Hypercalcemia, severe renal impairment.",
+                    sideEffects: "Hypercalcemia, GI upset (rare at physiologic doses)."
+                }
+            },
+            {
+                id: "l-carnitine",
+                name: "L-Carnitine",
+                class: "Amino acid derivative",
+                indication: ["Fat metabolism", "energy", "cardiac health", "male fertility"],
+                quickRef: {
+                    formulation: "1,000 mg/mL injection",
+                    route: "IM (intramuscular)",
+                    dosing: "1,000 mg IM weekly"
+                },
+                mechanism: "L-Carnitine facilitates transport of fatty acids into mitochondria for β-oxidation, supporting energy production. May enhance performance, cardiac function, and sperm health.",
+                pk: {
+                    absorption: "Complete IM",
+                    peakTime: null,
+                    halfLife: 17 * 60, // 17 hours
+                    metabolism: "Hepatic, some renal",
+                    excretion: "Renal"
+                },
+                dosing: ["1,000 mg IM weekly", "Adjust per clinical need (performance, infertility, deficiency)"],
+                pearls: ["May improve exercise capacity, muscle recovery, and cardiac output", "Useful in metabolic and mitochondrial disorders"],
+                safety: {
+                    monitoring: "Monitor for GI upset, rare muscle cramps.",
+                    contraindications: "None established.",
+                    sideEffects: "Mild GI upset, fishy odor (rare)."
+                }
+            },
+            {
+                id: "liraglutide",
+                name: "Liraglutide",
+                class: "GLP-1 receptor agonist",
+                indication: ["Type 2 diabetes", "obesity", "weight management"],
+                quickRef: {
+                    formulation: "6 mg/mL",
+                    route: "Subcutaneous (SQ) injection",
+                    dosing: "0.6–3.0 mg SQ daily; titration"
+                },
+                mechanism: "Liraglutide mimics endogenous GLP-1, stimulating insulin, suppressing glucagon, delaying gastric emptying, and reducing appetite.",
+                pk: {
+                    absorption: "Complete after SQ",
+                    peakTime: null,
+                    halfLife: 13 * 60, // ~13 hours
+                    metabolism: "Proteolytic",
+                    excretion: "Renal"
+                },
+                dosing: ["Start at 0.6 mg SQ daily x 1 week; increase by 0.6 mg increments weekly to 1.2–3.0 mg", "Monitor for GI side effects; titrate slowly"],
+                pearls: ["Proven cardiovascular benefit in diabetes", "Promotes satiety, significant weight loss in obesity"],
+                safety: {
+                    monitoring: "Labs: A1c, glucose, renal function.",
+                    contraindications: "Medullary thyroid carcinoma, MEN2, pancreatitis history.",
+                    sideEffects: "Nausea, vomiting, diarrhea, rarely pancreatitis."
+                }
+            },
+            {
+                id: "ghk-cu",
+                name: "GHK-Cu Cream",
+                class: "Copper tripeptide complex",
+                indication: ["Skin repair", "anti-aging", "wound healing"],
+                quickRef: {
+                    formulation: "1% topical cream",
+                    route: "Topical",
+                    dosing: "Apply 1 g (1 click) to affected area daily"
+                },
+                mechanism: "GHK-Cu (glycyl-l-histidyl-l-lysine–copper) increases collagen/elastin production, modulates inflammation, accelerates skin repair, and has antioxidant actions.",
+                pk: {
+                    absorption: "Good topical penetration",
+                    peakTime: null,
+                    halfLife: 30,
+                    metabolism: "Proteolysis",
+                    excretion: "Renal (systemic absorption minimal)"
+                },
+                dosing: ["Apply 1 g (1 click) topically to clean, affected area daily"],
+                pearls: ["Reduces appearance of fine lines, scars, pigmentation", "May enhance wound healing in post-procedure/trauma"],
+                safety: {
+                    monitoring: "Very well tolerated; avoid on open wounds with active infection.",
+                    contraindications: "None established.",
+                    sideEffects: "Mild irritation, allergic reaction (rare)."
+                }
+            },
+            {
+                id: "semaglutide",
+                name: "Semaglutide",
+                class: "GLP-1 receptor agonist",
+                indication: ["Type 2 diabetes", "obesity", "cardiometabolic health"],
+                quickRef: {
+                    formulation: "1.2 mg/mL (varies)",
+                    route: "Subcutaneous (SQ) injection",
+                    dosing: "0.25–2.4 mg SQ weekly (titration)"
+                },
+                mechanism: "Semaglutide mimics endogenous GLP-1, increasing insulin, suppressing glucagon, reducing appetite, delaying gastric emptying, and supporting weight loss.",
+                pk: {
+                    absorption: "Complete after SQ",
+                    peakTime: null,
+                    halfLife: 168 * 60, // ~7 days in minutes
+                    metabolism: "Proteolytic",
+                    excretion: "Renal",
+                },
+                dosing: [
+                    "Week 1: 0.25 mg SQ weekly",
+                    "Week 2: 0.5 mg",
+                    "Week 3: 1.0 mg",
+                    "Titrate to max: 2.4 mg weekly for weight loss (maintenance: lowest effective dose)"
+                ],
+                pearls: [
+                    "Powerful for weight loss, A1c reduction, cardiometabolic risk reduction",
+                    "Titrate slowly for GI tolerability"
+                ],
+                safety: {
+                    monitoring: "Labs: A1c, glucose, renal function.",
+                    contraindications: "Medullary thyroid carcinoma, MEN2, pancreatitis history.",
+                    sideEffects: "Nausea, vomiting, diarrhea, constipation, rarely pancreatitis."
+                }
+            },
+            {
+                id: "hcg",
+                name: "hCG (Pregnyl)",
+                class: "Glycoprotein hormone",
+                indication: ["Male infertility", "hypogonadism", "TRT adjunct"],
+                quickRef: {
+                    formulation: "5,000 IU/vial (varies); compounded",
+                    route: "Subcutaneous (SQ) injection",
+                    dosing: "500–2,000 IU SQ 2–3x/week"
+                },
+                mechanism: "hCG mimics LH, stimulating testicular testosterone and spermatogenesis in men; in women, triggers ovulation.",
+                pk: {
+                    absorption: "Complete after SQ",
+                    peakTime: null,
+                    halfLife: 36 * 60, // ~36 hours
+                    metabolism: "Hepatic/renal",
+                    excretion: "Urine"
+                },
+                dosing: ["Typical: 500–2,000 IU SQ 2–3x/week (higher for fertility, lower for maintenance with TRT)", "Adjust per testosterone, LH/FSH, and goals"],
+                pearls: ["Preserves fertility and testicular volume in men on TRT", "Monitor estrogen (may aromatize)"],
+                safety: {
+                    monitoring: "Labs: Testosterone, estradiol, LH/FSH, semen analysis (if fertility).",
+                    contraindications: "Hormone-sensitive malignancy, prostate cancer.",
+                    sideEffects: "Acne, mood swings, fluid retention, gynecomastia."
+                }
+            },
+            {
+                id: "ss-31",
+                name: "SS-31 (Elamipretide)",
+                class: "Mitochondria-targeted tetrapeptide",
+                indication: ["Mitochondrial dysfunction", "anti-aging", "neuromuscular protection"],
+                quickRef: {
+                    formulation: "0.5 mg/mL",
+                    route: "Subcutaneous (SQ) injection",
+                    dosing: "0.5 mg/kg SQ daily"
+                },
+                mechanism: "SS-31 selectively targets and stabilizes cardiolipin in the inner mitochondrial membrane, reducing oxidative stress, improving ATP production, and preventing cell death.",
+                pk: {
+                    absorption: "Rapid SQ",
+                    peakTime: null,
+                    halfLife: 2 * 60, // ~2 hours
+                    metabolism: "Peptidase",
+                    excretion: "Renal"
+                },
+                dosing: ["0.5 mg/kg SQ daily; adjust for response/tolerance"],
+                pearls: ["Studied for neuroprotection, muscular dystrophy, age-related muscle loss", "Still investigational in humans"],
+                safety: {
+                    monitoring: "Monitor for allergic reaction, injection site issues.",
+                    contraindications: "None established.",
+                    sideEffects: "Mild local pain, rare hypersensitivity."
+                }
+            },
+            {
+                id: "oxytocin",
+                name: "Oxytocin",
+                class: "Neuropeptide hormone",
+                indication: ["Labor induction", "postpartum hemorrhage", "lactation"],
+                quickRef: {
+                    formulation: "Injectable solution",
+                    route: "Intravenous (IV)",
+                    dosing: "Titrated IV infusion"
+                },
+                mechanism: "Oxytocin binds to G-protein-coupled receptors, leading to a cascade that increases intracellular calcium, activating myosin light chain kinase (MLCK) and causing myometrial contractions.",
+                pk: {
+                    absorption: "Immediate (IV)",
+                    peakTime: 1, // minutes
+                    peakTimeMax: 5,
+                    halfLife: 3,
+                    halfLifeMax: 5,
+                    metabolism: "Hepatic and enzymatic breakdown",
+                    excretion: "Renal"
+                },
+                dosing: ["Administered as per clinical protocol, typically starting at low doses and titrated to effect"],
+                pearls: ["FDA-approved and marketed as Pitocin, Syntocinon", "Essential for obstetric use", "Terminal amino group and Tyr hydroxyl group are critical for activity"],
+                safety: {
+                    monitoring: "Monitor for anaphylaxis, cardiac arrhythmias, nausea, vomiting, postpartum hemorrhage.",
+                    contraindications: "Known hypersensitivity or significant cardiovascular instability.",
+                    sideEffects: "Cardiac arrhythmias, nausea, vomiting."
+                }
+            }
+        ];
+
+        let chartInstance = null;
+        
+        const mainContent = document.getElementById('mainContent');
+        const peptideList = document.getElementById('peptideList');
+        const searchInput = document.getElementById('searchInput');
+        const classFilter = document.getElementById('classFilter');
+        const indicationFilter = document.getElementById('indicationFilter');
+
+        function renderPeptideDetails(peptide) {
+            mainContent.innerHTML = '';
+            if (peptide.id === 'intro') {
+                mainContent.innerHTML = `
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <h2 class="text-3xl font-bold text-gray-800 mb-2">${peptide.content.title}</h2>
+                        <p class="text-md text-gray-600 mb-6">${peptide.content.author}</p>
+                        <div class="space-y-4 text-gray-700">
+                            <p>${peptide.content.foreword}</p>
+                            <div><h3 class="text-xl font-semibold mb-2 mt-4 text-gray-800">How to Use This Guide</h3><p>${peptide.content.guide}</p></div>
+                             <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg mt-4">
+                                <h4 class="font-semibold text-blue-800">Disclaimer</h4>
+                                <p class="text-blue-700 text-sm">${peptide.content.disclaimer}</p>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-semibold mb-2 mt-4 text-gray-800">${peptide.content.pearlsTitle}</h3>
+                                <ul class="list-disc list-inside space-y-1">
+                                    ${peptide.content.pearls.map(p => `<li>${p}</li>`).join('')}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            mainContent.innerHTML = `
+                <div class="space-y-6">
+                    <!-- Header -->
+                    <div>
+                        <h2 class="text-4xl font-bold text-gray-800">${peptide.name}</h2>
+                        <p class="text-lg text-[#8AABDB] font-medium">${peptide.class}</p>
+                    </div>
+
+                    <!-- Quick Reference -->
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                        <h3 class="text-xl font-semibold mb-4 text-gray-800">Quick Reference</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-gray-700">
+                            <div class="flex items-center">
+                                <span class="text-2xl mr-3">🎯</span>
+                                <div><span class="font-semibold">Indication:</span> ${peptide.indication.join(', ')}</div>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="text-2xl mr-3">💊</span>
+                                <div><span class="font-semibold">Formulation:</span> ${peptide.quickRef.formulation}</div>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="text-2xl mr-3">💉</span>
+                                <div><span class="font-semibold">Route:</span> ${peptide.quickRef.route}</div>
+                            </div>
+                            <div class="flex items-center col-span-1 md:col-span-2 lg:col-span-3">
+                                 <span class="text-2xl mr-3">⚖️</span>
+                                <div><span class="font-semibold">Dosing:</span> ${peptide.quickRef.dosing}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tabs -->
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                        <div class="border-b border-gray-200">
+                            <nav class="-mb-px flex space-x-6 px-6" aria-label="Tabs">
+                                <button class="tab-btn tab-active whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-tab="mechanism">Mechanism</button>
+                                <button class="tab-btn text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-tab="pk">Pharmacokinetics</button>
+                                <button class="tab-btn text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-tab="dosing">Dosing & Titration</button>
+                                <button class="tab-btn text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-tab="pearls">Clinical Pearls</button>
+                                <button class="tab-btn text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-tab="safety">Safety & Monitoring</button>
+                            </nav>
+                        </div>
+                        <div class="p-6">
+                            <div class="tab-content" id="mechanismContent">${peptide.mechanism}</div>
+                            <div class="tab-content hidden" id="pkContent">
+                                <div class="chart-container mb-4">
+                                    <canvas id="pkChart"></canvas>
+                                </div>
+                                <ul class="list-disc list-inside space-y-1 text-sm">
+                                    <li><strong>Absorption:</strong> ${peptide.pk.absorption}</li>
+                                    <li><strong>Metabolism:</strong> ${peptide.pk.metabolism}</li>
+                                    <li><strong>Excretion:</strong> ${peptide.pk.excretion}</li>
+                                </ul>
+                            </div>
+                            <div class="tab-content hidden" id="dosingContent"><ul class="list-disc list-inside space-y-1">${peptide.dosing.map(d => `<li>${d}</li>`).join('')}</ul></div>
+                            <div class="tab-content hidden" id="pearlsContent"><ul class="list-disc list-inside space-y-1">${peptide.pearls.map(p => `<li>${p}</li>`).join('')}</ul></div>
+                            <div class="tab-content hidden" id="safetyContent">
+                                <h4 class="font-semibold text-gray-800">Monitoring</h4>
+                                <p class="mb-2">${peptide.safety.monitoring}</p>
+                                <h4 class="font-semibold text-gray-800">Contraindications</h4>
+                                <p class="mb-2">${peptide.safety.contraindications}</p>
+                                <h4 class="font-semibold text-gray-800">Common Side Effects</h4>
+                                <p>${peptide.safety.sideEffects}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            setupTabs();
+            renderPKChart(peptide);
+        }
+        
+        function setupTabs() {
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    tabButtons.forEach(btn => btn.classList.remove('tab-active', 'text-gray-800', 'font-semibold'));
+                    button.classList.add('tab-active', 'text-gray-800', 'font-semibold');
+                    
+                    const tabName = button.dataset.tab;
+                    tabContents.forEach(content => {
+                        if (content.id === `${tabName}Content`) {
+                            content.classList.remove('hidden');
+                        } else {
+                            content.classList.add('hidden');
+                        }
+                    });
+                });
+            });
+        }
+
+        function renderPKChart(peptide) {
+            const ctx = document.getElementById('pkChart')?.getContext('2d');
+            if (!ctx) return;
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+            
+            let halfLifeDisplay = peptide.pk.halfLife;
+            let peakTimeDisplay = peptide.pk.peakTime;
+            let unit = 'Minutes';
+
+            if (peptide.pk.halfLife > 120) { // If > 2 hours, convert to hours
+                halfLifeDisplay = peptide.pk.halfLife / 60;
+                peakTimeDisplay = peptide.pk.peakTime / 60;
+                unit = 'Hours';
+            }
+            if (peptide.pk.halfLife > 1440) { // If > 24 hours, convert to days
+                halfLifeDisplay = peptide.pk.halfLife / 1440;
+                peakTimeDisplay = peptide.pk.peakTime / 1440;
+                unit = 'Days';
+            }
 
 
-       let chartInstance = null;
-      
-       const mainContent = document.getElementById('mainContent');
-       const peptideList = document.getElementById('peptideList');
-       const searchInput = document.getElementById('searchInput');
-       const classFilter = document.getElementById('classFilter');
-       const indicationFilter = document.getElementById('indicationFilter');
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Half-life', 'Time to Peak'],
+                    datasets: [{
+                        label: `Time (${unit})`,
+                        data: [halfLifeDisplay, peakTimeDisplay],
+                        backgroundColor: ['#A0C4FF', '#BDB2FF'],
+                        borderColor: ['#8AABDB', '#a399e9'],
+                        borderWidth: 1,
+                        barPercentage: 0.5,
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        title: {
+                            display: true,
+                            text: 'Pharmacokinetic Timelines'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.raw !== null) {
+                                        label += context.raw.toFixed(2);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: unit,
+                            }
+                        }
+                    }
+                }
+            });
+        }
 
 
-       function renderPeptideDetails(peptide) {
-           mainContent.innerHTML = '';
-           if (peptide.id === 'intro') {
-               mainContent.innerHTML = `
-                   <div class="bg-white p-6 rounded-lg shadow-sm">
-                       <h2 class="text-3xl font-bold text-gray-800 mb-2">${peptide.content.title}</h2>
-                       <p class="text-md text-gray-600 mb-6">${peptide.content.author}</p>
-                       <div class="space-y-4 text-gray-700">
-                           <p>${peptide.content.foreword}</p>
-                           <div><h3 class="text-xl font-semibold mb-2 mt-4 text-gray-800">How to Use This Guide</h3><p>${peptide.content.guide}</p></div>
-                            <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg mt-4">
-                               <h4 class="font-semibold text-blue-800">Disclaimer</h4>
-                               <p class="text-blue-700 text-sm">${peptide.content.disclaimer}</p>
-                           </div>
-                           <div>
-                               <h3 class="text-xl font-semibold mb-2 mt-4 text-gray-800">${peptide.content.pearlsTitle}</h3>
-                               <ul class="list-disc list-inside space-y-1">
-                                   ${peptide.content.pearls.map(p => `<li>${p}</li>`).join('')}
-                               </ul>
-                           </div>
-                       </div>
-                   </div>
-               `;
-               return;
-           }
+        function filterAndRenderList() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const selectedClass = classFilter.value;
+            const selectedIndication = indicationFilter.value;
+            
+            peptideList.innerHTML = '';
+            
+            const introButton = document.createElement('button');
+            introButton.textContent = 'Introduction';
+            introButton.className = 'w-full text-left px-4 py-2 rounded-lg text-gray-700 hover:bg-[#A0C4FF] hover:text-white transition-colors duration-200';
+            introButton.onclick = () => {
+                renderPeptideDetails(peptideData[0]);
+                document.querySelectorAll('#peptideList button').forEach(b => b.classList.remove('bg-[#8AABDB]', 'text-white', 'font-semibold'));
+                introButton.classList.add('bg-[#8AABDB]', 'text-white', 'font-semibold');
+            };
+            peptideList.appendChild(introButton);
+            
+            const filteredPeptides = peptideData.slice(1).filter(p => {
+                const nameMatch = p.name.toLowerCase().includes(searchTerm);
+                const classMatch = !selectedClass || p.class === selectedClass;
+                const indicationMatch = !selectedIndication || p.indication.includes(selectedIndication);
+                return nameMatch && classMatch && indicationMatch;
+            });
 
+            filteredPeptides.forEach(peptide => {
+                const button = document.createElement('button');
+                button.textContent = peptide.name;
+                button.className = 'w-full text-left px-4 py-2 rounded-lg text-gray-700 hover:bg-[#A0C4FF] hover:text-white transition-colors duration-200';
+                button.onclick = () => {
+                    renderPeptideDetails(peptide);
+                    document.querySelectorAll('#peptideList button').forEach(b => b.classList.remove('bg-[#8AABDB]', 'text-white', 'font-semibold'));
+                    button.classList.add('bg-[#8AABDB]', 'text-white', 'font-semibold');
+                };
+                peptideList.appendChild(button);
+            });
+        }
 
-           mainContent.innerHTML = `
-               <div class="space-y-6">
-                   <!-- Header -->
-                   <div>
-                       <h2 class="text-4xl font-bold text-gray-800">${peptide.name}</h2>
-                       <p class="text-lg text-[#8AABDB] font-medium">${peptide.class}</p>
-                   </div>
+        function populateFilters() {
+            const classes = new Set();
+            const indications = new Set();
+            peptideData.slice(1).forEach(p => {
+                if (p.class) classes.add(p.class);
+                if (p.indication) p.indication.forEach(i => indications.add(i));
+            });
 
+            Array.from(classes).sort().forEach(c => {
+                const option = document.createElement('option');
+                option.value = c;
+                option.textContent = c;
+                classFilter.appendChild(option);
+            });
 
-                   <!-- Quick Reference -->
-                   <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                       <h3 class="text-xl font-semibold mb-4 text-gray-800">Quick Reference</h3>
-                       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-gray-700">
-                           <div class="flex items-center">
-                               <span class="text-2xl mr-3">🎯</span>
-                               <div><span class="font-semibold">Indication:</span> ${peptide.indication.join(', ')}</div>
-                           </div>
-                           <div class="flex items-center">
-                               <span class="text-2xl mr-3">💊</span>
-                               <div><span class="font-semibold">Formulation:</span> ${peptide.quickRef.formulation}</div>
-                           </div>
-                           <div class="flex items-center">
-                               <span class="text-2xl mr-3">💉</span>
-                               <div><span class="font-semibold">Route:</span> ${peptide.quickRef.route}</div>
-                           </div>
-                           <div class="flex items-center col-span-1 md:col-span-2 lg:col-span-3">
-                                <span class="text-2xl mr-3">⚖️</span>
-                               <div><span class="font-semibold">Dosing:</span> ${peptide.quickRef.dosing}</div>
-                           </div>
-                       </div>
-                   </div>
+            Array.from(indications).sort().forEach(i => {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = i;
+                indicationFilter.appendChild(option);
+            });
+        }
 
+        searchInput.addEventListener('input', filterAndRenderList);
+        classFilter.addEventListener('change', filterAndRenderList);
+        indicationFilter.addEventListener('change', filterAndRenderList);
 
-                   <!-- Tabs -->
-                   <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-                       <div class="border-b border-gray-200">
-                           <nav class="-mb-px flex space-x-6 px-6" aria-label="Tabs">
-                               <button class="tab-btn tab-active whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-tab="mechanism">Mechanism</button>
-                               <button class="tab-btn text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-tab="pk">Pharmacokinetics</button>
-                               <button class="tab-btn text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-tab="dosing">Dosing & Titration</button>
-                               <button class="tab-btn text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-tab="pearls">Clinical Pearls</button>
-                               <button class="tab-btn text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-tab="safety">Safety & Monitoring</button>
-                           </nav>
-                       </div>
-                       <div class="p-6">
-                           <div class="tab-content" id="mechanismContent">${peptide.mechanism}</div>
-                           <div class="tab-content hidden" id="pkContent">
-                               <div class="chart-container mb-4">
-                                   <canvas id="pkChart"></canvas>
-                               </div>
-                               <ul class="list-disc list-inside space-y-1 text-sm">
-                                   <li><strong>Absorption:</strong> ${peptide.pk.absorption}</li>
-                                   <li><strong>Metabolism:</strong> ${peptide.pk.metabolism}</li>
-                                   <li><strong>Excretion:</strong> ${peptide.pk.excretion}</li>
-                               </ul>
-                           </div>
-                           <div class="tab-content hidden" id="dosingContent"><ul class="list-disc list-inside space-y-1">${peptide.dosing.map(d => `<li>${d}</li>`).join('')}</ul></div>
-                           <div class="tab-content hidden" id="pearlsContent"><ul class="list-disc list-inside space-y-1">${peptide.pearls.map(p => `<li>${p}</li>`).join('')}</ul></div>
-                           <div class="tab-content hidden" id="safetyContent">
-                               <h4 class="font-semibold text-gray-800">Monitoring</h4>
-                               <p class="mb-2">${peptide.safety.monitoring}</p>
-                               <h4 class="font-semibold text-gray-800">Contraindications</h4>
-                               <p class="mb-2">${peptide.safety.contraindications}</p>
-                               <h4 class="font-semibold text-gray-800">Common Side Effects</h4>
-                               <p>${peptide.safety.sideEffects}</p>
-                           </div>
-                       </div>
-                   </div>
-               </div>
-           `;
-          
-           setupTabs();
-           renderPKChart(peptide);
-       }
-      
-       function setupTabs() {
-           const tabButtons = document.querySelectorAll('.tab-btn');
-           const tabContents = document.querySelectorAll('.tab-content');
-           tabButtons.forEach(button => {
-               button.addEventListener('click', () => {
-                   tabButtons.forEach(btn => btn.classList.remove('tab-active', 'text-gray-800', 'font-semibold'));
-                   button.classList.add('tab-active', 'text-gray-800', 'font-semibold');
-                  
-                   const tabName = button.dataset.tab;
-                   tabContents.forEach(content => {
-                       if (content.id === `${tabName}Content`) {
-                           content.classList.remove('hidden');
-                       } else {
-                           content.classList.add('hidden');
-                       }
-                   });
-               });
-           });
-       }
-
-
-       function renderPKChart(peptide) {
-           const ctx = document.getElementById('pkChart')?.getContext('2d');
-           if (!ctx) return;
-
-
-           if (chartInstance) {
-               chartInstance.destroy();
-           }
-          
-           let halfLifeDisplay = peptide.pk.halfLife;
-           let peakTimeDisplay = peptide.pk.peakTime;
-           let unit = 'Minutes';
-
-
-           if (peptide.pk.halfLife > 120) { // If > 2 hours, convert to hours
-               halfLifeDisplay = peptide.pk.halfLife / 60;
-               peakTimeDisplay = peptide.pk.peakTime / 60;
-               unit = 'Hours';
-           }
-           if (peptide.pk.halfLife > 1440) { // If > 24 hours, convert to days
-               halfLifeDisplay = peptide.pk.halfLife / 1440;
-               peakTimeDisplay = peptide.pk.peakTime / 1440;
-               unit = 'Days';
-           }
-
-
-
-
-           chartInstance = new Chart(ctx, {
-               type: 'bar',
-               data: {
-                   labels: ['Half-life', 'Time to Peak'],
-                   datasets: [{
-                       label: `Time (${unit})`,
-                       data: [halfLifeDisplay, peakTimeDisplay],
-                       backgroundColor: ['#A0C4FF', '#BDB2FF'],
-                       borderColor: ['#8AABDB', '#a399e9'],
-                       borderWidth: 1,
-                       barPercentage: 0.5,
-                   }]
-               },
-               options: {
-                   indexAxis: 'y',
-                   responsive: true,
-                   maintainAspectRatio: false,
-                   plugins: {
-                       legend: { display: false },
-                       title: {
-                           display: true,
-                           text: 'Pharmacokinetic Timelines'
-                       },
-                       tooltip: {
-                           callbacks: {
-                               label: function(context) {
-                                   let label = context.dataset.label || '';
-                                   if (label) {
-                                       label += ': ';
-                                   }
-                                   if (context.raw !== null) {
-                                       label += context.raw.toFixed(2);
-                                   }
-                                   return label;
-                               }
-                           }
-                       }
-                   },
-                   scales: {
-                       x: {
-                           beginAtZero: true,
-                           title: {
-                               display: true,
-                               text: unit,
-                           }
-                       }
-                   }
-               }
-           });
-       }
-
-
-
-
-       function filterAndRenderList() {
-           const searchTerm = searchInput.value.toLowerCase();
-           const selectedClass = classFilter.value;
-           const selectedIndication = indicationFilter.value;
-          
-           peptideList.innerHTML = '';
-          
-           const introButton = document.createElement('button');
-           introButton.textContent = 'Introduction';
-           introButton.className = 'w-full text-left px-4 py-2 rounded-lg text-gray-700 hover:bg-[#A0C4FF] hover:text-white transition-colors duration-200';
-           introButton.onclick = () => {
-               renderPeptideDetails(peptideData[0]);
-               document.querySelectorAll('#peptideList button').forEach(b => b.classList.remove('bg-[#8AABDB]', 'text-white', 'font-semibold'));
-               introButton.classList.add('bg-[#8AABDB]', 'text-white', 'font-semibold');
-           };
-           peptideList.appendChild(introButton);
-          
-           const filteredPeptides = peptideData.slice(1).filter(p => {
-               const nameMatch = p.name.toLowerCase().includes(searchTerm);
-               const classMatch = !selectedClass || p.class === selectedClass;
-               const indicationMatch = !selectedIndication || p.indication.includes(selectedIndication);
-               return nameMatch && classMatch && indicationMatch;
-           });
-
-
-           filteredPeptides.forEach(peptide => {
-               const button = document.createElement('button');
-               button.textContent = peptide.name;
-               button.className = 'w-full text-left px-4 py-2 rounded-lg text-gray-700 hover:bg-[#A0C4FF] hover:text-white transition-colors duration-200';
-               button.onclick = () => {
-                   renderPeptideDetails(peptide);
-                   document.querySelectorAll('#peptideList button').forEach(b => b.classList.remove('bg-[#8AABDB]', 'text-white', 'font-semibold'));
-                   button.classList.add('bg-[#8AABDB]', 'text-white', 'font-semibold');
-               };
-               peptideList.appendChild(button);
-           });
-       }
-
-
-       function populateFilters() {
-           const classes = new Set();
-           const indications = new Set();
-           peptideData.slice(1).forEach(p => {
-               classes.add(p.class);
-               p.indication.forEach(i => indications.add(i));
-           });
-
-
-           Array.from(classes).sort().forEach(c => {
-               const option = document.createElement('option');
-               option.value = c;
-               option.textContent = c;
-               classFilter.appendChild(option);
-           });
-
-
-           Array.from(indications).sort().forEach(i => {
-               const option = document.createElement('option');
-               option.value = i;
-               option.textContent = i;
-               indicationFilter.appendChild(option);
-           });
-       }
-
-
-       searchInput.addEventListener('input', filterAndRenderList);
-       classFilter.addEventListener('change', filterAndRenderList);
-       indicationFilter.addEventListener('change', filterAndRenderList);
-
-
-       // Initial Load
-       populateFilters();
-       filterAndRenderList();
-       renderPeptideDetails(peptideData[0]);
-       document.querySelector('#peptideList button').classList.add('bg-[#8AABDB]', 'text-white', 'font-semibold');
-   </script>
+        // Initial Load
+        populateFilters();
+        filterAndRenderList();
+        renderPeptideDetails(peptideData[0]);
+        document.querySelector('#peptideList button').classList.add('bg-[#8AABDB]', 'text-white', 'font-semibold');
+    </script>
 </body>
 </html>
-
-
-
