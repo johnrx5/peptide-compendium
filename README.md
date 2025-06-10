@@ -1,6 +1,6 @@
 # peptide-compendium
-Peptide Drug Reference guide for healthcare professionals
-Interactive Peptide Compendium
+Interactive Peptide Drug Reference guide for healthcare professionals
+
 This project transforms the "Peptide Compendium: A Practical Reference for Prescribers" authored by Jobby John, PharmD, FACA, into a fully interactive, single-page web application. The goal is to provide healthcare professionals with a dynamic and efficient tool to access and explore crucial information on various peptides.
 
 This application was designed to move beyond a static document, offering a user-friendly interface for quick searching, filtering, and comparison of clinical data.
